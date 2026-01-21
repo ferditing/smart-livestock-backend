@@ -70,4 +70,35 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+
+router.get("/mine", authMiddleware, async (req: AuthRequest, res) => {
+  if(req.user.role !=="agro"){
+    return res.status(403).json({error: "agrovet only"})
+  }
+
+  const provider = await db("providers")
+  .where({user_id: req.user.id})
+  .first();
+
+  if(!provider){
+    return res.json([]);
+  }
+  const products = await db("products")
+  .where({provider_id: provider.id})
+  .orderBy("created_at", "desc")
+
+  res.json(products);
+});
+
+
+router.get("/by-provider/:providerId", async (req, res) => {
+  const { providerId } = req.params;
+
+  const products = await db("products")
+  .where({provider_id: providerId})
+  .orderBy("created_at", "asc")
+
+  res.json(products);
+});
+
 export default router;
