@@ -72,8 +72,8 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
 
 
 router.get("/mine", authMiddleware, async (req: AuthRequest, res) => {
-  if(req.user.role !=="agro"){
-    return res.status(403).json({error: "agrovet only"})
+  if (req.user.role !== 'agrovet' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'agrovets only' });
   }
 
   const provider = await db("providers")
@@ -83,7 +83,7 @@ router.get("/mine", authMiddleware, async (req: AuthRequest, res) => {
   if(!provider){
     return res.json([]);
   }
-  const products = await db("products")
+  const products = await db("agro_products")
   .where({provider_id: provider.id})
   .orderBy("created_at", "desc")
 
@@ -94,7 +94,7 @@ router.get("/mine", authMiddleware, async (req: AuthRequest, res) => {
 router.get("/by-provider/:providerId", async (req, res) => {
   const { providerId } = req.params;
 
-  const products = await db("products")
+  const products = await db("agro_products")
   .where({provider_id: providerId})
   .orderBy("created_at", "asc")
 

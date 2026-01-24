@@ -11,6 +11,9 @@ import appointmentsRoutes from './appointments/appointments.routes';
 import feedbackRoutes from './feedback/feedback.routes';
 import adminRoutes from './admin/admin.routes';
 import mlRoutes from './ml/ml.routes';
+import profileRoutes from './profile/profile.routes';
+import followupsRoutes from './followups/followups.routes';
+import animalRoutes from './animal/animal.routes';
 
 const app = express();
 
@@ -39,6 +42,9 @@ app.use('/api/ml', mlRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/animal', animalRoutes);
+app.use('/api/followups', followupsRoutes);
 
 app.get('/', (req, res) => res.send('Smart Livestock Backend up'));
 

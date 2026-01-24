@@ -62,4 +62,14 @@ router.get("/assigned", authMiddleware, async (req: AuthRequest, res) => {
   res.json(await db("appointments").where("provider_id", provider.id));
 });
 
+// My diagnoses
+router.get("/diagnoses", authMiddleware, async (req: AuthRequest, res) => {
+  const diagnoses = await db("diagnoses")
+  .join("symptom_reports", "diagnoses.report_id", "symptom_reports.id")
+  .where("symptom_reports.user_id", req.user.id)
+  .select("diagnoses.*");
+
+  res.json(diagnoses);
+});
+
 export default router;
