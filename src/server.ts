@@ -14,10 +14,12 @@ import mlRoutes from './ml/ml.routes';
 import profileRoutes from './profile/profile.routes';
 import followupsRoutes from './followups/followups.routes';
 import animalRoutes from './animal/animal.routes';
+import userRoutes from './user/user.routes';
+import clinicalRoutes from './routes/clinical.routes';
 
 const app = express();
 
-// Enable CORS for frontend (adjust origin as needed)
+// Enable CORS for frontend
 app.use(cors({ origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173' }));
 
 app.use(express.json());
@@ -45,6 +47,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/animal', animalRoutes);
 app.use('/api/followups', followupsRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api', clinicalRoutes); 
 
 app.get('/', (req, res) => res.send('Smart Livestock Backend up'));
 

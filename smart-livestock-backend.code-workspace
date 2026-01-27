@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "smartlivestock-frontend",
+			"path": "../smartlivestock-frontend"
+		},
+		{
+			"name": "Ml_SERVICE",
+			"path": "../Ml_SERVICE"
+		}
+	],
+	"settings": {}
+}
