@@ -72,4 +72,38 @@ router.get("/diagnoses", authMiddleware, async (req: AuthRequest, res) => {
   res.json(diagnoses);
 });
 
+/**
+ * Update appointment (status change)
+ * - vets can accept/decline appointments assigned to their provider record
+ * - farmers can cancel their own appointments
+ */
+router.patch("/:id", authMiddleware, async (req: AuthRequest, res) => {
+  const id = Number(req.params.id);
+  const { status } = req.body;
+
+  if (!status) return res.status(400).json({ error: "status required" });
+
+  // allowed statuses (expand as needed)
+  const allowed = ["pending", "accepted", "declined", "cancelled", "completed"];
+  if (!allowed.includes(status)) return res.status(400).json({ error: "invalid status" });
+
+  const appt = await db("appointments").where("id", id).first();
+  if (!appt) return res.status(404).json({ error: "not found" });
+
+  // vets: must own the provider record
+  if (req.user.role === "vet") {
+    const provider = await db("providers").where("user_id", req.user.id).first();
+    if (!provider || provider.id !== appt.provider_id) return res.status(403).json({ error: "forbidden" });
+  }
+
+  // farmers: must own appointment to change (e.g., cancel)
+  if (req.user.role === "farmer") {
+    if (appt.farmer_id !== req.user.id) return res.status(403).json({ error: "forbidden" });
+  }
+
+  const [updated] = await db("appointments").where("id", id).update({ status }).returning(["id", "status"]);
+
+  res.json(updated);
+});
+
 export default router;
