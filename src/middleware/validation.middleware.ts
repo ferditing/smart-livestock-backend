@@ -8,7 +8,9 @@ import { body, param, validationResult } from 'express-validator';
  */
 const schemas: Record<string, Array<ReturnType<typeof body | typeof param>>> = {
   createClinicalRecord: [
-    body('animalId').exists().withMessage('animalId is required').isString(),
+    body('animalId').exists().withMessage('animalId is required').isNumeric(),
+    body('vetId').optional({ nullable: true}).isNumeric().withMessage('vetId is required').isNumeric(),
+    body('mlDiagnosis').exists().withMessage('mlDiagnosis is required').isString(),
     body('date').optional().isISO8601().withMessage('date must be ISO8601'),
     body('notes').optional().isString(),
   ],
