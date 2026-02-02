@@ -48,21 +48,26 @@ async function runOnce() {
   const reportId = report.report_id;
   console.log("[WORKER] Predicting for report:", reportId);
 
+  if (report.animal_type === 'buffalo') {
+    throw new Error('Unsupported animal type');
+  }
+
   const symptoms = parseSymptoms(report.symptom_text);
 
   /**
-   * RAW payload → ML service handles preprocessing
+   * RAW payload → send free-text to the ML NLP endpoint which will
+   * extract features and call the model (ml service v2 `/predict_from_text`).
    */
   const mlPayload = {
-    animal_type: report.animal_type, // cow | goat | sheep | buffalo
+    animal: report.animal_type, // cow | goat | sheep | buffalo
+    symptom_text: report.symptom_text ?? "",
     age: report.age ?? 0,
-    body_temperature: 0, // not stored yet
-    symptoms
+    body_temperature: 0 // not stored yet
   };
 
   try {
     const mlResp = await axios.post(
-      "http://localhost:8001/predict",
+      "http://localhost:8001/predict_from_text",
       mlPayload,
       { timeout: 10000 }
     );

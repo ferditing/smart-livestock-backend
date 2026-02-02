@@ -4,11 +4,20 @@ import { CreateClinicalRecordDTO, UpdateClinicalRecordDTO, CreateFollowUpDTO } f
 
 export const clinicalController = {
   
-    createClinicalRecord: async (req: Request, res: Response) => {
+  createClinicalRecord: async (req: Request, res: Response) => {
     try {
+
       const { animalId, vetId, mlDiagnosis, mlConfidence, vetDiagnosis, notes } = req.body;
 
-      console.log('Received data:', { animalId, vetId, mlDiagnosis, mlConfidence });
+      const user = (req as any).user;
+
+      const finalVetId = user.role === 'vet' ? user.id : req.body.vetId;
+
+      if (!finalVetId) {
+      return res.status(400).json({ error: 'Attending vet ID is required' });
+      }
+
+
 
       // Verify animal exists
       const animal = await db('animals').where({ id: animalId }).first();
@@ -20,7 +29,7 @@ export const clinicalController = {
       // Create clinical record
       const [record] = await db('clinical_records').insert({
         animal_id: animalId,
-        vet_id: vetId,
+        vet_id: finalVetId,
         ml_diagnosis: mlDiagnosis,
         ml_confidence: mlConfidence,
         vet_diagnosis: vetDiagnosis,
@@ -28,7 +37,7 @@ export const clinicalController = {
         status: 'pending'
       }).returning('*');
 
-      // Fetch the created record with joins - ✅ FIXED: use species and tag_id instead of name
+      // Fetch the created record with joins
       const clinicalRecord = await db('clinical_records as cr')
         .where('cr.id', record.id)
         .leftJoin('animals as a', 'cr.animal_id', 'a.id')
@@ -42,7 +51,6 @@ export const clinicalController = {
 
       res.status(201).json(clinicalRecord);
     } catch (error) {
-      console.error('Error creating clinical record:', error);
       res.status(500).json({ error: 'Failed to create clinical record' });
     }
   },
@@ -57,7 +65,7 @@ export const clinicalController = {
         .leftJoin('users as v', 'cr.vet_id', 'v.id')
         .select(
           'cr.*',
-          db.raw('json_build_object(\'id\', a.id, \'name\', a.species, \'type\', a.species, \'breed\', a.breed) as animal'),
+          db.raw('json_build_object(\'id\', a.id, \'name\', a.species, \'type\', a.species, \'breed\', a.breed, \'reg_no\', a.reg_no) as animal'),
           db.raw('json_build_object(\'id\', v.id, \'name\', v.name, \'email\', v.email) as vet')
         )
         .first();
@@ -71,16 +79,28 @@ export const clinicalController = {
 
       res.json(clinicalRecord);
     } catch (error) {
-      console.error('Error fetching clinical record:', error);
       res.status(500).json({ error: 'Failed to fetch clinical record' });
     }
   },
 
   getAllClinicalRecords: async (req: Request, res: Response) => {
     try {
-      const clinicalRecords = await db('clinical_records as cr')
+      const user = (req as any).user;
+
+      const { id: userId, role } = (req as any).user;
+
+      let query = db('clinical_records as cr')
         .leftJoin('animals as a', 'cr.animal_id', 'a.id')
-        .leftJoin('users as v', 'cr.vet_id', 'v.id')
+        .leftJoin('users as v', 'cr.vet_id', 'v.id');
+
+
+      if (role === 'vet') {
+        query = query.where('cr.vet_id', Number(userId));
+      } else if (role === 'farmer') {
+        query = query.where('a.user_id', Number(userId));
+      }
+
+      const clinicalRecords = await query
         .select(
           'cr.*',
           db.raw('json_build_object(\'id\', a.id, \'name\', a.species, \'type\', a.species, \'breed\', a.breed) as animal'),
@@ -90,7 +110,6 @@ export const clinicalController = {
 
       res.json(clinicalRecords);
     } catch (error) {
-      console.error('Failed to fetch clinical records:', error);
       res.status(500).json({ error: 'Failed to fetch clinical records' });
     }
   },
@@ -127,7 +146,6 @@ export const clinicalController = {
         offset: parseInt(offset as string)
       });
     } catch (error) {
-      console.error('Error fetching clinical history:', error);
       res.status(500).json({ error: 'Failed to fetch clinical history' });
     }
   },
@@ -160,7 +178,6 @@ export const clinicalController = {
 
       res.json(clinicalRecord);
     } catch (error) {
-      console.error('Error updating clinical record:', error);
       res.status(500).json({ error: 'Failed to update clinical record' });
     }
   },
@@ -186,7 +203,6 @@ export const clinicalController = {
 
       res.status(201).json(followUp);
     } catch (error) {
-      console.error('Error creating follow-up:', error);
       res.status(500).json({ error: 'Failed to create follow-up' });
     }
   },
@@ -208,7 +224,6 @@ export const clinicalController = {
 
       res.json(followUp);
     } catch (error) {
-      console.error('Error updating follow-up:', error);
       res.status(500).json({ error: 'Failed to update follow-up' });
     }
   },
@@ -238,7 +253,6 @@ export const clinicalController = {
 
       res.json(followUps);
     } catch (error) {
-      console.error('Error fetching pending follow-ups:', error);
       res.status(500).json({ error: 'Failed to fetch pending follow-ups' });
     }
   }
