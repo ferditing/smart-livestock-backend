@@ -8,11 +8,12 @@ import { body, param, validationResult } from 'express-validator';
  */
 const schemas: Record<string, Array<ReturnType<typeof body | typeof param>>> = {
   createClinicalRecord: [
-    body('animalId').exists().withMessage('animalId is required').isNumeric(),
-    body('vetId').optional({ nullable: true}).isNumeric().withMessage('vetId is required').isNumeric(),
-    body('mlDiagnosis').exists().withMessage('mlDiagnosis is required').isString(),
-    body('date').optional().isISO8601().withMessage('date must be ISO8601'),
-    body('notes').optional().isString(),
+    body('animalId').exists().withMessage('animalId is required').isNumeric().withMessage('animalId must be numeric'),
+    body('vetId').exists().withMessage('Attending veterinarian is required').isNumeric().withMessage('vetId must be numeric'),
+    body('mlDiagnosis').exists().withMessage('mlDiagnosis is required').isString().withMessage('mlDiagnosis must be a string'),
+    body('mlConfidence').optional().isNumeric().withMessage('mlConfidence must be numeric'),
+    body('vetDiagnosis').optional({ nullable: true }).isString().withMessage('vetDiagnosis must be a string'),
+    body('notes').optional({ nullable: true }).isString().withMessage('notes must be a string'),
   ],
   updateClinicalRecord: [
     param('recordId').exists().withMessage('recordId is required').isString(),

@@ -93,6 +93,45 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
 });
 
 /**
+ * GET single provider by ID
+ */
+router.get('/:providerId', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { providerId } = req.params;
+
+    const provider = await db('providers')
+      .where({ id: providerId })
+      .select(
+        'id',
+        'name',
+        'provider_type',
+        'contact',
+        db.raw('ST_Y(location::geometry) AS lat'),
+        db.raw('ST_X(location::geometry) AS lng')
+      )
+      .first();
+
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider not found' });
+    }
+
+    // Get product count for this provider
+    const productCount = await db('agro_products')
+      .where({ provider_id: providerId })
+      .count('* as count')
+      .first();
+
+    res.json({
+      ...provider,
+      product_count: productCount?.count || 0
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
+/**
  * GET products for a provider (Farmer → Agrovet catalog)
  */
 router.get('/:providerId/products', authMiddleware, async (req: AuthRequest, res) => {
