@@ -31,15 +31,29 @@ export async function register(req: Request, res: Response) {
         phone,
         password_hash,
         role,
+        latitude: location?.lat || null,
+        longitude: location?.lng || null,
+        county: location?.county || null,
+        sub_county: location?.sub_county || null,
+        ward: location?.ward || null,
+        locality: location?.locality || null,
+        location_point:
+          location?.lat && location?.lng
+            ? db.raw(
+                "ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography",
+                [location.lng, location.lat]
+              )
+            : null,
         profile_meta: location
           ? {
               county: location.county,
               sub_county: location.sub_county,
+              ward: location.ward,
               locality: location.locality,
             }
           : null,
       })
-      .returning(["id", "name", "email", "role"]);
+      .returning(["id", "name", "email", "role", "county", "sub_county", "ward", "locality"]);
 
     // 🔥 AUTO-CREATE PROVIDER FOR VET / AGROVET
     if (role === "vet" || role === "agrovet") {

@@ -143,3 +143,44 @@ ML_SERVICE_URL=http://localhost:5000
 Frontend: smartlivestock-frontend
 
 ML Service: smartlivestock-ml-service
+here is update .evn file 
+# Server Configuration
+PORT=
+NODE_ENV=development
+
+# Database Configuration
+# Option 1: Use individual DB variables
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=
+DB_NAME=
+
+# Option 2: Use DATABASE_URL (uncomment and adjust if using Docker/cloud DB)
+# DATABASE_URL=postgres://postgres:postgres@localhost:5432
+
+# JWT Configuration
+JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+
+# ML Service Integration
+ML_SERVICE_URL=http://localhost:8001
+
+# Optional: Debug mode
+DEBUG=false
+#communication
+# PRIMARY PROVIDER
+SMS_PRIMARY_PROVIDER=blessed_texts
+
+# Umesikia
+UMESIKIA_API_KEY=
+UMESIKIA_APP_ID=UMSC618327
+UMESIKIA_SENDER_ID=UMS_SMS
+UMESIKIA_ENDPOINT=https://comms.umeskiasoftwares.com/api/v1/sms/send
+
+# BlessedTexts
+BLESSED_API_KEY=
+BLESSED_SENDER_ID=FERRITE
+BLESSED_ENDPOINT=https://sms.blessedtexts.com/api/sms/v1/sendsms
+
+# Failover
+SMS_ENABLE_FAILOVER=true
