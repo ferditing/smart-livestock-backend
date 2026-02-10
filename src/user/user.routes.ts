@@ -9,7 +9,19 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const { role } = req.query;
     
-    let query = db('users').select('id', 'name', 'email', 'role');
+    let query = db('users').select(
+      'id',
+      'name',
+      'email',
+      'phone',
+      'role',
+      'county',
+      'sub_county',
+      'ward',
+      'locality',
+      'latitude',
+      'longitude'
+    );
     
     if (role) {
       query = query.where({ role: role as string });
