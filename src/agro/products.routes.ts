@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db from '../db';
 import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
+import { uploadProductImage } from "../middleware/upload.middleware";
 
 const router = Router();
 
@@ -14,40 +15,80 @@ router.get('/', async (req, res) => {
 });
 
 // Create product (agrovet only)
-router.post('/', authMiddleware, async (req: AuthRequest, res) => {
-  try {
-    if (req.user.role !== 'agrovet' && req.user.role !== 'admin')
-      return res.status(403).json({ error: 'agrovets only' });
+router.post(
+  '/',
+  authMiddleware,
+  uploadProductImage.single("image"),
+  async (req: AuthRequest, res) => {
+    try {
+      if (req.user.role !== 'agrovet' && req.user.role !== 'admin')
+        return res.status(403).json({ error: 'agrovets only' });
 
-    const { name, price, description } = req.body;
-    if (!name) return res.status(400).json({ error: 'name required' });
+      const {
+        name,
+        price,
+        description,
+        quantity,
+        usage,
+        company
+      } = req.body;
 
-    // find provider record for this agrovet user
-    const provider = await db('providers').where('user_id', req.user.id).first();
-    if (!provider) return res.status(400).json({ error: 'provider profile not registered' });
+      if (!name)
+        return res.status(400).json({ error: 'name required' });
 
-    const [prod] = await db('agro_products')
-      .insert({ provider_id: provider.id, name, price, description })
-      .returning('*');
+      const provider = await db('providers')
+        .where('user_id', req.user.id)
+        .first();
 
-    res.status(201).json(prod);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'server error' });
+      if (!provider)
+        return res.status(400).json({ error: 'provider profile not registered' });
+
+      const imageUrl = req.file
+        ? `/uploads/products/${req.file.filename}`
+        : null;
+
+      const [prod] = await db('agro_products')
+        .insert({
+          provider_id: provider.id,
+          name,
+          price,
+          description,
+          quantity,
+          usage,
+          company,
+          image_url: imageUrl
+        })
+        .returning('*');
+
+      res.status(201).json(prod);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'server error' });
+    }
   }
-});
+);
 
 // Update product (agrovet only)
-router.put('/:id', authMiddleware, async (req: AuthRequest, res) => {
+router.put(
+  '/:id',
+  authMiddleware,
+  uploadProductImage.single("image"),
+  async (req: AuthRequest, res) =>  {
   try {
     if (req.user.role !== 'agrovet' && req.user.role !== 'admin')
       return res.status(403).json({ error: 'agrovets only' });
 
     const id = Number(req.params.id);
     const changes = req.body;
-
-    const updated = await db('agro_products').where('id', id).update(changes).returning('*');
-    if (!updated.length) return res.status(404).json({ error: 'not found' });
+     if (req.file) {
+        changes.image_url = `/uploads/products/${req.file.filename}`;
+      }
+    const updated = await db('agro_products')
+    .where('id', id)
+    .update(changes)
+    .returning('*');
+    if (!updated.length) return res.status(404)
+      .json({ error: 'not found' });
     res.json(updated[0]);
   } catch (err) {
     console.error(err);

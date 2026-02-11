@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from "path";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -24,7 +25,10 @@ app.use(cors({ origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173' })
 
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
-
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "../uploads"))
+);
 // Support preflight for all routes
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
