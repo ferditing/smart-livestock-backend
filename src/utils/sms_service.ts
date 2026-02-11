@@ -14,30 +14,72 @@ const normalizePhone = (phone: string): string | null => {
 };
 
 const sendWithUmesikia = async (phones: string[], message: string) => {
-  return axios.post(
-    process.env.UMESIKIA_ENDPOINT!,
-    new URLSearchParams({
-      api_key: process.env.UMESIKIA_API_KEY!,
-      app_id: process.env.UMESIKIA_APP_ID!,
-      sender_id: process.env.UMESIKIA_SENDER_ID!,
-      message,
-      phone: phones.join(","),
-    }),
-    { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-  );
+  try {
+    const response = await axios.post(
+      process.env.UMESIKIA_ENDPOINT!,
+      new URLSearchParams({
+        api_key: process.env.UMESIKIA_API_KEY!,
+        app_id: process.env.UMESIKIA_APP_ID!,
+        sender_id: process.env.UMESIKIA_SENDER_ID!,
+        message,
+        phone: phones.join(","),
+      }),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
+    console.log("[SMS] Umesikia API Response:", response.data);
+    return response;
+  } catch (err: any) {
+    console.error("[SMS] Umesikia API Error:", {
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      message: err.message,
+    });
+    throw err;
+  }
 };
 
 const sendWithBlessed = async (phones: string[], message: string) => {
-  return axios.post(
-    process.env.BLESSED_ENDPOINT!,
-    {
+  try {
+    const payload = {
       api_key: process.env.BLESSED_API_KEY,
       sender_id: process.env.BLESSED_SENDER_ID,
       message,
       phone: phones.join(","),
-    },
-    { headers: { "Content-Type": "application/json" } }
-  );
+    };
+    
+    console.log("[SMS] Blessed Texts Payload:", JSON.stringify(payload, null, 2));
+    
+    const response = await axios.post(
+      process.env.BLESSED_ENDPOINT!,
+      payload,
+      { headers: { "Content-Type": "application/json" }, timeout: 15000 }
+    );
+    
+    console.log("[SMS] Blessed Texts API Response:", JSON.stringify(response.data, null, 2));
+    
+    // Check if API response indicates success
+    if (Array.isArray(response.data)) {
+      const results = response.data as any[];
+      results.forEach(r => {
+        if (r.status_code === '1000') {
+          console.log(`[SMS] ✓ Message queued for delivery: ${r.phone} (ID: ${r.message_id})`);
+        } else {
+          console.warn(`[SMS] ⚠ API returned non-success code: ${r.status_code} - ${r.status_desc}`);
+        }
+      });
+    }
+    
+    return response;
+  } catch (err: any) {
+    console.error("[SMS] Blessed Texts API Error:", {
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      message: err.message,
+    });
+    throw err;
+  }
 };
 
 export const sendSMS = async (
