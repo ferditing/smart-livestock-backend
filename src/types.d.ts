@@ -3,5 +3,5 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
-  role: 'farmer'|'vet'|'agrovet'|'admin';
+  role: 'farmer'|'vet'|'agrovet'|'admin'|'secretary'|'subadmin'|'chairman';
 }

@@ -184,3 +184,13 @@ BLESSED_ENDPOINT=https://sms.blessedtexts.com/api/sms/v1/sendsms
 
 # Failover
 SMS_ENABLE_FAILOVER=true
+#gmail stmp credentials and also update
+# Example for Gmail:
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your gmail account
+SMTP_PASS=
+SMTP_FROM=SmartLivestock <stevenkibet911@gmail.com>
+
+#frontend end intergration
+FRONTEND_ORIGIN=http://localhost:5173,http://localhost:5174

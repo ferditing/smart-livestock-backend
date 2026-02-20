@@ -93,6 +93,27 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
 });
 
 /**
+ * GET current user's provider (for vet/agrovet)
+ */
+router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const provider = await db('providers')
+      .where({ user_id: req.user.id })
+      .select('id', 'name', 'provider_type')
+      .first();
+
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider not found' });
+    }
+
+    res.json(provider);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
+/**
  * GET single provider by ID
  */
 router.get('/:providerId', authMiddleware, async (req: AuthRequest, res) => {

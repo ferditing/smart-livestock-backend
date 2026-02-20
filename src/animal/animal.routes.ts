@@ -87,15 +87,67 @@ router.get("/", authMiddleware, async (req: AuthRequest, res) => {
     res.json(animals);
 });
 
-
-//  Inventory summary 
+// inventory summary (must be before /:id)
 router.get("/summary", authMiddleware, async (req: AuthRequest, res) => {
     const rows = await db("animals")
         .select("species")
         .count("* as count")
         .where("user_id", req.user.id)
         .groupBy("species");
-
     res.json(rows);
-})
+});
+
+// get single animal
+router.get("/:id", authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { id } = req.params;
+        const animal = await db("animals")
+            .where({ id, user_id: req.user.id })
+            .first();
+        if (!animal) return res.status(404).json({ error: "Animal not found" });
+        res.json(animal);
+    } catch (e) {
+        res.status(500).json({ error: "Failed to fetch animal" });
+    }
+});
+
+// update animal
+router.put("/:id", authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        if (req.user.role !== "farmer") return res.status(403).json({ error: "Forbidden, farmers only" });
+        const { id } = req.params;
+        const { species, breed, age, weight, tag_id } = req.body;
+        const updateData: Record<string, unknown> = {};
+        if (species !== undefined) updateData.species = species;
+        if (breed !== undefined) updateData.breed = breed;
+        if (age !== undefined) updateData.age = age;
+        if (weight !== undefined) updateData.weight = weight;
+        if (tag_id !== undefined) updateData.tag_id = tag_id;
+
+        const [updated] = await db("animals")
+            .where({ id, user_id: req.user.id })
+            .update(updateData)
+            .returning("*");
+        if (!updated) return res.status(404).json({ error: "Animal not found" });
+        res.json(updated);
+    } catch (e) {
+        res.status(500).json({ error: "Failed to update animal" });
+    }
+});
+
+// delete animal
+router.delete("/:id", authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        if (req.user.role !== "farmer") return res.status(403).json({ error: "Forbidden, farmers only" });
+        const { id } = req.params;
+        const deleted = await db("animals")
+            .where({ id, user_id: req.user.id })
+            .del();
+        if (!deleted) return res.status(404).json({ error: "Animal not found" });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: "Failed to delete animal" });
+    }
+});
+
 export default router;
