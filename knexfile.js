@@ -25,7 +25,7 @@ const config = {
   pool: { 
     min: isProduction ? 2 : 1,
     max: isProduction ? 10 : 5,
-    acquireConnectionTimeout: 10000,
+    acquireTimeoutMillis: 10000,
     idleTimeoutMillis: 30000
   }
 };
