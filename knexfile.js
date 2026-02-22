@@ -1,6 +1,6 @@
-import type { Knex } from 'knex';
-import dotenv from 'dotenv';
-dotenv.config();
+require('dotenv').config();
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 const connection = process.env.DATABASE_URL || {
   host: process.env.DB_HOST || '127.0.0.1',
@@ -8,10 +8,10 @@ const connection = process.env.DATABASE_URL || {
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'smartlivestock',
   port: +(process.env.DB_PORT || 5432),
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false} : false
+  ssl: isProduction ? { rejectUnauthorized: false } : false
 };
 
-const config: Knex.Config = {
+const config = {
   client: 'pg',
   connection,
   migrations: {
@@ -23,12 +23,11 @@ const config: Knex.Config = {
     directory: './seeds'
   },
   pool: { 
-    min: 2, 
-    max: 10,
-    acquireTimeoutMillis: 10000,
+    min: isProduction ? 2 : 1,
+    max: isProduction ? 10 : 5,
+    acquireConnectionTimeout: 10000,
     idleTimeoutMillis: 30000
   }
 };
 
-// CommonJS export so Knex CLI (require) works reliably
 module.exports = config;
