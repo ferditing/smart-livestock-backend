@@ -22,7 +22,7 @@ router.post(
         ((req as any).files as Express.Multer.File[]) || [];
       const imagePaths = imageFiles.map((f) => f.filename);
 
-      let canonical_animal = null;
+      let canonical_animal: string | null = null;
       let canonical_symptoms: string[] = [];
 
       // If frontend provided canonical_symptoms (from ML prediction), normalize different shapes into string[]
