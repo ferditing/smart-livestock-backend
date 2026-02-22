@@ -28,10 +28,13 @@ import publicRoutes from './routes/public.routes';
 const app = express();
 
 // Enable CORS for frontend (support 5173, 5174 when port changes)
-const allowedOrigins = process.env.FRONTEND_ORIGIN
-  ? process.env.FRONTEND_ORIGIN.split(',').map((o) => o.trim())
-  : ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'];
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cors({ 
+  origin: process.env.NODE_ENV === 'production'
+  ? process.env.FRONTEND_ORIGIN
+  : 'https://localhost:5173',
+  credentials: true,
+  optionsSuccessStatus: 200
+}));
 
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
@@ -74,12 +77,7 @@ app.use('/api', clinicalRoutes);
 app.get('/', (req, res) => res.send('Smart Livestock Backend up'));
 
 //const port = process.env.PORT || 3000;
-//app.listen(port, () => console.log(`Server listening on ${port}`));
 const port = process.env.PORT || 3000;
 const env = process.env.NODE_ENV || "development";
 
-app.listen(port, () => {
-  console.log(`[INFO] Server listening on http://localhost:${port}`);
-  console.log(`[INFO] Environment: ${env}`);
-  console.log(""); // optional blank line for cleaner terminal
-})
+app.listen(port, () => {})

@@ -18,7 +18,6 @@ router.post(
   async (req: AuthRequest, res) => {
     try {
       const { animal_id, symptom_text, lat, lng, animal_type, canonical_symptoms: provided_canonical } = req.body;
-      console.log('[REPORTS POST] Received report with:', { animal_type, provided_canonical, symptom_text: symptom_text?.substring(0, 50) });
       const imageFiles =
         ((req as any).files as Express.Multer.File[]) || [];
       const imagePaths = imageFiles.map((f) => f.filename);
@@ -54,7 +53,6 @@ router.post(
           } else if (typeof provided_canonical === 'string') {
             canonical_symptoms = [String(provided_canonical)];
           }
-          if (canonical_symptoms.length > 0) console.log('[REPORTS] Using provided canonical_symptoms (normalized):', canonical_symptoms);
         } catch (e) {
           console.warn('[REPORTS] Failed to normalize provided_canonical:', e);
         }
@@ -66,7 +64,6 @@ router.post(
         if (symptom_text) {
           try {
             const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:8001';
-            console.log(`[REPORTS] Calling ML normalize at: ${mlServiceUrl}/normalize`);
             const mlRes = await axios.post(
               `${mlServiceUrl}/normalize`,
               {
@@ -75,7 +72,6 @@ router.post(
               },
               { timeout: 5000 }
             );
-            console.log("[REPORTS] ML normalize response:", mlRes.data);
             canonical_animal = mlRes.data.animal_type;
             canonical_symptoms = mlRes.data.matched_symptoms || [];
           } catch (mlErr) {
@@ -89,7 +85,6 @@ router.post(
       }
 
       // Ensure we have valid data to store
-      console.log("[REPORTS] Storing report with animal_type:", canonical_animal, "symptoms:", canonical_symptoms);
       
       const [report] = await db("symptom_reports")
         .insert({
@@ -107,7 +102,6 @@ router.post(
         })
         .returning(["id", "created_at", "animal_type", "canonical_symptoms"]);
 
-      console.log("[REPORTS] Report created:", report);
       res.status(201).json({ report_id: report.id, status: "received" });
     } catch (err) {
       console.error(err);

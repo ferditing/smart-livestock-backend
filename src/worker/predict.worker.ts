@@ -41,12 +41,10 @@ async function runOnce() {
   const report = await fetchPendingReport();
 
   if (!report) {
-    console.log("[WORKER] No pending reports");
     return;
   }
 
   const reportId = report.report_id;
-  console.log("[WORKER] Predicting for report:", reportId);
 
   if (report.animal_type === 'buffalo') {
     throw new Error('Unsupported animal type');
@@ -73,7 +71,6 @@ async function runOnce() {
     );
 
     const data = mlResp.data;
-    console.log("[WORKER] ML response:", data);
 
     // Save diagnosis
     await db("diagnoses").insert({
@@ -99,7 +96,6 @@ async function runOnce() {
       .where({ id: reportId })
       .update({ status: "predicted" });
 
-    console.log("[WORKER] Prediction saved for report:", reportId);
 
   } catch (err: any) {
     console.error("[WORKER] Prediction failed:", err?.message || err);
@@ -114,11 +110,9 @@ async function runOnce() {
  * Run once (cron / manual / worker)
  */
 if (require.main === module) {
-  console.log("[WORKER] Starting...");
   (async () => {
     try {
       await runOnce();
-      console.log("[WORKER] Done");
     } catch (err) {
       console.error("[WORKER] Fatal error:", err);
     }

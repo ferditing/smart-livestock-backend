@@ -26,7 +26,6 @@ const sendWithUmesikia = async (phones: string[], message: string) => {
       }),
       { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
     );
-    console.log("[SMS] Umesikia API Response:", response.data);
     return response;
   } catch (err: any) {
     console.error("[SMS] Umesikia API Error:", {
@@ -48,24 +47,19 @@ const sendWithBlessed = async (phones: string[], message: string) => {
       phone: phones.join(","),
     };
     
-    console.log("[SMS] Blessed Texts Payload:", JSON.stringify(payload, null, 2));
-    
     const response = await axios.post(
       process.env.BLESSED_ENDPOINT!,
       payload,
       { headers: { "Content-Type": "application/json" }, timeout: 15000 }
     );
     
-    console.log("[SMS] Blessed Texts API Response:", JSON.stringify(response.data, null, 2));
     
     // Check if API response indicates success
     if (Array.isArray(response.data)) {
       const results = response.data as any[];
       results.forEach(r => {
         if (r.status_code === '1000') {
-          console.log(`[SMS] ✓ Message queued for delivery: ${r.phone} (ID: ${r.message_id})`);
         } else {
-          console.warn(`[SMS] ⚠ API returned non-success code: ${r.status_code} - ${r.status_desc}`);
         }
       });
     }
@@ -98,8 +92,6 @@ export const sendSMS = async (
   const primary = process.env.SMS_PRIMARY_PROVIDER || "blessed_texts";
   const failover = process.env.SMS_ENABLE_FAILOVER === "true";
 
-  console.log(`[SMS] Sending to ${phones.join(", ")} via ${primary}`);
-
   try {
     if (primary === "blessed_texts")
       return await sendWithBlessed(phones, message);
@@ -110,7 +102,6 @@ export const sendSMS = async (
     if (!failover) throw err;
 
     // failover attempt
-    console.log("[SMS] Attempting failover...");
     if (primary === "blessed_texts")
       return await sendWithUmesikia(phones, message);
     else

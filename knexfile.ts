@@ -7,7 +7,8 @@ const connection = process.env.DATABASE_URL || {
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'smartlivestock',
-  port: +(process.env.DB_PORT || 5432)
+  port: +(process.env.DB_PORT || 5432),
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false} : false
 };
 
 const config: Knex.Config = {
@@ -21,7 +22,12 @@ const config: Knex.Config = {
     extension: 'ts',
     directory: './seeds'
   },
-  pool: { min: 2, max: 10 }
+  pool: { 
+    min: 2, 
+    max: 10,
+    acquireTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000
+  }
 };
 
 // CommonJS export so Knex CLI (require) works reliably
