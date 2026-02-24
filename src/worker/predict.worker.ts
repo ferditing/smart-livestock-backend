@@ -65,7 +65,7 @@ async function runOnce() {
 
   try {
     const mlResp = await axios.post(
-      "http://localhost:8001/predict_from_text",
+      `${process.env.ML_SERVICE_URL}/predict_from_text`,
       mlPayload,
       { timeout: 10000 }
     );
