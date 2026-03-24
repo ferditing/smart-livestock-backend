@@ -243,27 +243,30 @@ router.get("/mine", authMiddleware, async (req: AuthRequest, res) => {
 
 router.get("/by-provider/:providerId", async (req, res) => {
   const { providerId } = req.params;
-  const { page = 1, search = "" } = req.query;
-
-  const limit = 12;
-  const offset = (Number(page) - 1) * limit;
+  const { page, search = "" } = req.query;
 
   let query = db("agro_products")
-    .where({ provider_id: providerId })
+    .where({ provider_id: Number(providerId) })
     .andWhere("name", "ilike", `%${search}%`);
 
-  const total = await query.clone().count("* as c").first();
-
-  const data = await query
-    .limit(limit)
-    .offset(offset)
-    .orderBy("created_at", "desc");
-
-  res.json({
-    data,
-    total: total?.c,
-    page
-  });
+  let data;
+  if (page) {
+    const limit = 12;
+    const offset = (Number(page) - 1) * limit;
+    const total = await query.clone().count("* as c").first();
+    data = await query
+      .limit(limit)
+      .offset(offset)
+      .orderBy("created_at", "desc");
+    res.json({
+      data,
+      total: total?.c,
+      page
+    });
+  } else {
+    data = await query.orderBy("created_at", "desc");
+    res.json(data);
+  }
 });
 
 export default router;
