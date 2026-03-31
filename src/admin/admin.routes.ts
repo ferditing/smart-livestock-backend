@@ -554,6 +554,40 @@ router.put('/providers/:id/reject', authMiddleware, requireAdmin, async (req: Au
   }
 });
 
+// Provider wallets overview (shop + escrow) for admin
+router.get('/providers/:id/wallets', authMiddleware, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const providerId = Number(req.params.id);
+    if (!Number.isFinite(providerId)) {
+      return res.status(400).json({ error: 'invalid provider id' });
+    }
+
+    const provider = await db('providers').where({ id: providerId }).first();
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider not found' });
+    }
+
+    const wallets = await db('wallets')
+      .where({ user_id: provider.user_id })
+      .whereIn('type', ['shop', 'escrow'])
+      .select('id', 'type', 'balance', 'created_at');
+
+    res.json({
+      provider_id: providerId,
+      user_id: provider.user_id,
+      wallets: wallets.map((w: any) => ({
+        id: w.id,
+        type: w.type,
+        balance: Number(w.balance || 0),
+        created_at: w.created_at,
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
 // ----- Audit logs -----
 router.get('/audit-logs', authMiddleware, requireAdmin, async (req: AuthRequest, res) => {
   try {
