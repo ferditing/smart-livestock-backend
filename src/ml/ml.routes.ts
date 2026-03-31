@@ -30,7 +30,6 @@ router.post('/predict', async (req, res) => {
         age: req.body.age,
         body_temperature: req.body.body_temperature,
       };
-      console.log('[ML] /predict forwarding to /predict_from_text with:', bodyForText);
       const r = await axios.post(`${ml}/predict_from_text`, bodyForText, { timeout: 10000 });
       return res.json(r.data);
     }
@@ -50,26 +49,21 @@ router.post('/predict_from_text', async (req, res) => {
     let normalized_animal = (animal || '').toLowerCase().trim();
     const ml = process.env.ML_SERVICE_URL || 'http://localhost:8001';
     
-    console.log('[ML] /predict_from_text received:', { animal: normalized_animal, symptom_text: symptom_text?.substring(0, 50) });
     
     // If animal is empty/not provided, try to detect it from text
     if (!normalized_animal && symptom_text) {
-      console.log('[ML] Animal is empty, attempting auto-detect from text');
       try {
         const normalizeRes = await axios.post(`${ml}/normalize`, {
           animal: '',
           symptom_text: symptom_text
         }, { timeout: 5000 });
-        console.log('[ML] /normalize response:', normalizeRes.data);
         normalized_animal = normalizeRes.data?.animal_type || '';
-        console.log('[ML] Auto-detected animal from text:', normalized_animal);
       } catch (normalizeErr: any) {
         console.warn('[ML] Auto-detect failed:', normalizeErr?.response?.status, normalizeErr?.response?.data || normalizeErr?.message);
       }
     }
     
     // If still no animal after all attempts, just send empty and let ML service handle it
-    console.log('[ML] Calling ML /predict_from_text with animal:', normalized_animal || '(empty)', 'text:', symptom_text?.substring(0, 50));
     const r = await axios.post(`${ml}/predict_from_text`, {
       animal: normalized_animal,
       symptom_text: symptom_text,
@@ -77,7 +71,6 @@ router.post('/predict_from_text', async (req, res) => {
       body_temperature: body_temperature
     }, { timeout: 10000 });
     
-    console.log('[ML] /predict_from_text ML response success:', r.data?.predicted_disease);
     res.json(r.data);
   } catch (err: any) {
     console.error('[ML] /predict_from_text failed with:', { 
@@ -86,6 +79,21 @@ router.post('/predict_from_text', async (req, res) => {
       message: err?.message 
     });
     res.status(502).json({ error: 'prediction failed', details: err?.response?.data?.detail || err?.message });
+  }
+});
+
+
+router.get('/symptoms_for_animal/:animal', async (req, res) => {
+  try {
+    const { animal } = req.params;
+    const ml = process.env.ML_SERVICE_URL || 'http://localhost:8001';
+    
+    const r = await axios.get(`${ml}/symptoms_for_animal/${animal}`, { timeout: 5000 });
+    
+    res.json(r.data);
+  } catch (err: any) {
+    console.error('[ML] /symptoms_for_animal failed:', err?.response?.status, err?.response?.data || err?.message);
+    res.status(502).json({ error: 'failed to fetch symptoms', details: err?.response?.data?.detail || err?.message });
   }
 });
 
