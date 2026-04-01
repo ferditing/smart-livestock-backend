@@ -3,6 +3,7 @@ import db from "../db";
 import { sendSMS } from "../utils/sms_service";
 import { smsTemplates } from "../utils/sms_templates";
 import { authMiddleware, AuthRequest } from "../middleware/auth.middleware";
+import { NotificationEvents } from "../notifications/notification.events";
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
   const vet = await db("providers")
     .where("providers.id", provider_id)
     .leftJoin("users", "providers.user_id", "users.id")
-    .select("users.phone", "users.name")
+    .select("users.phone", "users.name", "users.id as user_id")
     .first();
 
   const farmer = await db("users")
@@ -74,6 +75,14 @@ Location: ${locationStr}${mapLink}`;
   } else {
     console.warn(`[SMS] Vet ${vet?.name} has no phone number on file`);
   }
+
+  // Send WebSocket notification to vet
+  NotificationEvents.newAppointmentForProvider(req, vet.user_id, {
+    appointmentId: ins.id,
+    farmerName: farmer.name,
+    farmerPhone: farmer.phone,
+    scheduledAt: scheduled_at,
+  });
 
   res.status(201).json(ins);
 });
