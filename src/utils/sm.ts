@@ -23,7 +23,7 @@ const withRetries = async <T>(
   for (let i = 0; i < retries; i++) {
     try {
       return await fn();
-    } catch (err) {
+    } catch (err: any) {
       lastError = err;
       console.warn(`[SMS] Attempt ${i + 1} failed: ${err.message}`);
       if (i < retries - 1) await new Promise(r => setTimeout(r, delay));
@@ -102,7 +102,7 @@ export const sendSMS = async (
   try {
     if (primary === "blessed_texts") return await sendWithBlessed(phones, message);
     else return await sendWithUmesikia(phones, message);
-  } catch (err) {
+  } catch (err: any) {
     console.error("[SMS] Primary provider failed:", err.message);
     if (!failover) throw err;
 
