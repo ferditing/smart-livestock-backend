@@ -89,4 +89,21 @@ router.post('/predict_from_text', async (req, res) => {
   }
 });
 
+
+router.get('/symptoms_for_animal/:animal', async (req, res) => {
+  try {
+    const { animal } = req.params;
+    const ml = process.env.ML_SERVICE_URL || 'http://localhost:8001';
+    
+    console.log('[ML] /symptoms_for_animal/:animal requested for:', animal);
+    const r = await axios.get(`${ml}/symptoms_for_animal/${animal}`, { timeout: 5000 });
+    
+    console.log('[ML] /symptoms_for_animal/:animal response:', r.data?.count, 'symptoms');
+    res.json(r.data);
+  } catch (err: any) {
+    console.error('[ML] /symptoms_for_animal failed:', err?.response?.status, err?.response?.data || err?.message);
+    res.status(502).json({ error: 'failed to fetch symptoms', details: err?.response?.data?.detail || err?.message });
+  }
+});
+
 export default router;
