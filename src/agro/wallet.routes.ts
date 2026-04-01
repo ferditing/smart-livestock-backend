@@ -1,7 +1,7 @@
 import { Router } from "express";
 import db from "../db";
 import { authMiddleware, AuthRequest } from "../middleware/auth.middleware";
-import { WalletService } from "../../services/wallet.service";
+import { WalletService } from "../services/wallet.service";
 
 const router = Router();
 
