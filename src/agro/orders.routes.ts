@@ -2,6 +2,7 @@ import { Router } from 'express';
 import db from '../db';
 import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 import { sendSMS } from '../utils/sms_service';
+import { NotificationEvents } from '../notifications/notification.events';
 
 const router = Router();
 const ALLOWED_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -147,7 +148,7 @@ router.patch('/seller/:id/status', authMiddleware, async (req: AuthRequest, res)
     if (!hasMyProducts) return res.status(404).json({ error: 'Order not found' });
     await db('orders').where('id', orderId).update({ status });
     const updated = await db('orders').where('id', orderId).first();
-    const buyer = await db('users').where({ id: order.user_id }).select('name', 'phone').first();
+    const buyer = await db('users').where({ id: order.user_id }).select('name', 'phone', 'id').first();
     if (buyer?.phone) {
       try {
         const msg = `SmartLivestock: Your order #${orderId} status is now "${status}". Thank you for your business.`;
@@ -156,6 +157,14 @@ router.patch('/seller/:id/status', authMiddleware, async (req: AuthRequest, res)
         console.error('[SMS] Order status notification failed:', smsErr);
       }
     }
+    
+    // Send WebSocket notification to buyer
+    NotificationEvents.orderStatusChanged(req, buyer.id, {
+      orderId: orderId,
+      status: status,
+      orderNumber: orderId,
+    });
+    
     res.json(updated);
   } catch (err) {
     console.error(err);
@@ -252,6 +261,13 @@ router.post('/checkout', authMiddleware, async (req: AuthRequest, res) => {
 
     const cartIds = cart.map((c: { cart_id: number }) => c.cart_id);
     await db('cart').whereIn('id', cartIds).del();
+
+    // Send notification about new order created
+    NotificationEvents.orderStatusChanged(req, req.user.id, {
+      orderId: order.id,
+      status: 'pending',
+      orderNumber: order.id,
+    });
 
     res.json(order);
   } catch (err) {

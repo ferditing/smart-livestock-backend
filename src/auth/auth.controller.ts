@@ -3,6 +3,7 @@ import db from "../db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { NotificationEvents } from "../notifications/notification.events";
 
 dotenv.config();
 
@@ -76,6 +77,12 @@ export async function register(req: Request, res: Response) {
       JWT_SECRET,
       { expiresIn: "7d" }
     );
+
+    // Fire-and-forget welcome notification; do not block registration on failure
+    NotificationEvents.welcomeUser(req, user.id, { name: user.name, role: user.role })
+      .catch((notifyErr) => {
+        console.error("Failed to send welcome notification:", notifyErr);
+      });
 
     res.status(201).json({ user, token });
   } catch (err) {
